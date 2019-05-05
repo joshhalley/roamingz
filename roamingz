@@ -1,0 +1,635 @@
+#!/usr/bin/tclsh
+package require Tclx
+
+# replace break handling from Cntrl-c with final report 
+set depart 0
+signal trap SIGINT { puts "\nRoutine Exit Attempted Ctrl-C" ; set break 1 ; set depart 1} 
+
+if {$argv < 0} {
+puts "Version: 1.0 Beta"
+puts "usage: roaming \[-W Wifi\] \[-D DHCP\]\n\n" 
+    	exit 1
+	} elseif {[regexp -all .*v $argv]} {
+	puts "Version 0.1"
+	exit 1
+	} else {
+}
+
+#Procedures for Color 
+proc color {foreground text} {
+    return [exec tput setaf $foreground]$text[exec tput sgr0]
+}
+
+proc underline_color {foreground text} {
+    return [exec tput setaf $foreground][exec tput smul]$text[exec tput rmul][exec tput sgr0]; 
+}
+
+proc bold_color {foreground text} {
+    return [exec tput setaf $foreground][exec tput bold]$text[exec tput sgr0]
+}
+
+proc bunderline_color {foreground text} {
+    return [exec tput setaf $foreground][exec tput smul][exec tput bold]$text[exec tput rmul][exec tput sgr0]; 
+}
+
+proc background_color {background text} {
+    return [exec tput setab $background]$text[exec tput sgr0];
+}
+
+proc  WIFI_STAT {} {
+	#puts [info level 0]
+        #Retrive RF Statistics 		
+	if {[catch {set RF_STAT [exec /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I]} fid]} {
+    		puts stderr "Could not execute RF STAT Query\n$fid"
+    		exit 1
+		}
+
+	if {[catch {set RF_STAT [split $RF_STAT]} fid]} {
+                puts stderr “ Could not set RF_STAT ($fid) \n“
+                exit 1
+                }
+	if {[catch {set RSSI [lindex $RF_STAT 6]} fid]} {
+                puts stderr “ Could not set RSSI ($fid) \n“
+                exit 1
+                }
+	if {[catch {set NOISE [lindex $RF_STAT 19]} fid]} {
+                puts stderr “ Could not set NOISE ($fid) \n“
+                exit 1
+                }
+	if {[catch {set TXRATE [lindex $RF_STAT 56]} fid]} {
+                puts stderr “ Could not set TXRATE ($fid) \n“
+                exit 1
+                }
+	if {[catch {set AUTH [lindex $RF_STAT 75]} fid]} {
+                puts stderr “ Could not set AUTH ($fid) \n“
+                exit 1
+                }
+	if {[catch {set LINKA [lindex $RF_STAT 84]} fid]} {
+                puts stderr “ Could not set LINKA ($fid) \n“
+                exit 1
+                }
+	if {[catch {set BSSID [lindex $RF_STAT 96]} fid]} {
+                puts stderr “ Could not set BSSID ($fid) \n“
+                exit 1
+                }
+	if {[catch {set SSID [lindex $RF_STAT 109]} fid]} {
+                puts stderr “ Could not set SSID ($fid) \n“
+                exit 1
+                }
+	if {[catch {set MCS [lindex $RF_STAT 123]} fid]} {
+                puts stderr “ Could not set MCS ($fid) \n“
+                exit 1
+                }
+	if {[catch {set CHAN [lindex $RF_STAT 133]} fid]} {
+                puts stderr “ Could not set CHAN ($fid) \n“
+                exit 1
+                }
+
+		# Calculate SNR 
+		if {[catch {set SNR [expr $RSSI - $NOISE]} fid]} {
+    		puts stderr “Could not calculate SNR - Variables Not Set ($fid) \n“
+    		exit 1
+		}
+
+		# Set Global Time Value
+
+		# Set Global SNR Value
+		#global currenttime
+		#if {[catch {set currenttime $TIME} fid]} {
+                #puts stderr “Could not calculate currenttime - Variables Not Set ($fid) \n“
+                #exit 1
+                #}
+
+                # Set Global Noise Value
+                global currentnoise
+                if {[catch {set currentnoise $NOISE} fid]} {
+                puts stderr “Could not calculate currentnoise - Variables Not Set ($fid) \n“
+                exit 1
+                }
+
+		# Set Global SSID Value
+		global currentssid
+		if {[catch {set currentssid $BSSID} fid]} {
+                puts stderr “Could not set currentssid - Variables Not Set ($fid) \n“
+                exit 1
+                }
+
+		# Set Global RSSI Value
+                global currentrssi
+                if {[catch {set currentrssi $RSSI} fid]} {
+                puts stderr “Could not set currentrssi - Variables Not Set ($fid) \n“
+                exit 1
+                }
+
+		#Colorize RSSI - PENDING
+        if {$RSSI == -96} {
+                set RSSI [background_color 15 [bold_color 196  $RSSI]]
+                	} elseif {$RSSI == -95} {
+                    set RSSI [background_color 15 [bold_color 197  $RSSI]]
+                } elseif {$RSSI == -94} {
+                    set RSSI [background_color 15 [bold_color 198  $RSSI]]
+                } elseif {$RSSI == -93} {
+                    set RSSI [background_color 15 [bold_color 199  $RSSI]]
+                } elseif {$RSSI == -92} {
+                    set RSSI [background_color 15 [bold_color 200  $RSSI]]
+                } elseif {$RSSI == -91} {
+                    set RSSI [background_color 15 [bold_color 201  $RSSI]]
+                } elseif {$RSSI == -90} {
+                    set RSSI [background_color 15 [bold_color 202  $RSSI]]
+                } elseif {$RSSI == -89} {
+                    set RSSI [background_color 15 [bold_color 203  $RSSI]]
+                } elseif {$RSSI == -88} {
+                    set RSSI [background_color 15 [bold_color 204  $RSSI]]
+                } elseif {$RSSI == -87} {
+                    set RSSI [background_color 15 [bold_color 205  $RSSI]]
+                } elseif {$RSSI == -86} {
+                    set RSSI [background_color 15 [bold_color 206  $RSSI]]
+                } elseif {$RSSI == -85} {
+                    set RSSI [background_color 15 [bold_color 207  $RSSI]]
+                } elseif {$RSSI == -84} {
+                    set RSSI [background_color 15 [bold_color 208  $RSSI]]
+                } elseif {$RSSI == -83} {
+                    set RSSI [background_color 15 [bold_color 209  $RSSI]]
+		} elseif {$RSSI == -82} {
+                    set RSSI [background_color 15 [bold_color 210  $RSSI]]
+                } elseif {$RSSI == -81} {
+                    set RSSI [background_color 15 [bold_color 211  $RSSI]]
+                } elseif {$RSSI == -80} {
+                    set RSSI [background_color 15 [bold_color 212  $RSSI]]
+                } elseif {$RSSI == -79} {
+                    set RSSI [bold_color 213  $RSSI]
+                } elseif {$RSSI == -78} {
+                    set RSSI [bold_color 214  $RSSI]
+                } elseif {$RSSI == -77} {
+                    set RSSI [bold_color 215  $RSSI]
+                } elseif {$RSSI == -76} {
+                    set RSSI [bold_color 216  $RSSI]
+                } elseif {$RSSI == -75} {
+                    set RSSI [bold_color 217  $RSSI]
+                } elseif {$RSSI == -74} {
+                    set RSSI [bold_color 218  $RSSI]
+                } elseif {$RSSI == -73} {
+                    set RSSI [bold_color 219  $RSSI]
+                } elseif {$RSSI == -72} {
+                    set RSSI [bold_color 228  $RSSI]
+                } elseif {$RSSI == -71} {
+                    set RSSI [bold_color 227  $RSSI]
+                } elseif {$RSSI == -70} {
+                    set RSSI [bold_color 226  $RSSI]
+               	} elseif {$RSSI == -69} {
+                    set RSSI [bold_color 225  $RSSI]
+                } elseif {$RSSI == -68} {
+                    set RSSI [bold_color 226  $RSSI]
+                } elseif {$RSSI == -67} {
+                    set RSSI [bold_color 227  $RSSI]
+                } elseif {$RSSI == -66} {
+                    set RSSI [bold_color 228  $RSSI]
+                } elseif {$RSSI == -65} {
+                    set RSSI [bold_color 77  $RSSI]
+                } elseif {$RSSI == -64} {
+                    set RSSI [bold_color 78  $RSSI]
+                } elseif {$RSSI == -63} {
+                    set RSSI [bold_color 79  $RSSI]
+                } elseif {$RSSI == -62} {
+                    set RSSI [bold_color 80  $RSSI]
+                } elseif {$RSSI == -61} {
+                    set RSSI [bold_color 81  $RSSI]
+                } elseif {$RSSI == -60} {
+                    set RSSI [bold_color 82  $RSSI]
+                } elseif {$RSSI == -59} {
+                    set RSSI [bold_color 83  $RSSI]
+                } elseif {$RSSI == -58} {
+                    set RSSI [bold_color 84  $RSSI]
+                } elseif {$RSSI == -57} {
+                    set RSSI [bold_color 85  $RSSI]
+		} elseif {$RSSI == -56} {
+                    set RSSI [bold_color 86  $RSSI]
+                } elseif {$RSSI == -55} {
+                    set RSSI [bold_color 87  $RSSI]
+                } elseif {$RSSI == -54} {
+                    set RSSI [bold_color 93  $RSSI]
+                } elseif {$RSSI == -53} {
+                    set RSSI [bold_color 92  $RSSI]
+                } elseif {$RSSI == -52} {
+                    set RSSI [bold_color 91  $RSSI]
+                } elseif {$RSSI == -51} {
+                    set RSSI [bold_color 99  $RSSI]
+                } elseif {$RSSI == -50} {
+                    set RSSI [bold_color 98  $RSSI]
+                } elseif {$RSSI == -49} {
+                    set RSSI [bold_color 97  $RSSI]
+                } elseif {$RSSI == -48} {
+                    set RSSI [bold_color 105  $RSSI]
+                } elseif {$RSSI == -47} {
+                    set RSSI [bold_color 104  $RSSI]
+                } elseif {$RSSI == -46} {
+                    set RSSI [bold_color 111  $RSSI]
+                } elseif {$RSSI == -45} {
+                    set RSSI [bold_color 110  $RSSI]
+                } elseif {$RSSI == -44} {
+                    set RSSI [bold_color 109  $RSSI]
+                } else {
+                set RSSI [bold_color 226  $RSSI]
+                }
+
+	set systemTime [clock seconds]
+
+	#MCS DEFINITIONS 
+	set MCS_RATEX(coding) LEGACY
+	set MCS_RATE0(coding) 1/2
+	set MCS_RATE1(coding) 1/2
+	set MCS_RATE2(coding) 3/4
+	set MCS_RATE3(coding) 1/2
+	set MCS_RATE4(coding) 3/4
+	set MCS_RATE5(coding) 2/3
+	set MCS_RATE6(coding) 3/4
+	set MCS_RATE7(coding) 5/6
+	set MCS_RATE8(coding) 1/2
+	set MCS_RATE9(coding) 1/2
+	set MCS_RATE10(coding) 3/4
+	set MCS_RATE11(coding) 1/2
+	set MCS_RATE12(coding) 3/4
+	set MCS_RATE13(coding) 2/3
+	set MCS_RATE14(coding) 3/4
+	set MCS_RATE15(coding) 5/6
+	set MCS_RATE16(coding) 1/2
+	set MCS_RATE17(coding) 1/2
+	set MCS_RATE18(coding) 3/4
+	set MCS_RATE19(coding) 1/2
+	set MCS_RATE20(coding) 3/4
+	set MCS_RATE21(coding) 2/3
+	set MCS_RATE22(coding) 3/4
+	set MCS_RATE23(coding) 5/6
+	set MCS_RATE24(coding) 1/2
+	set MCS_RATE25(coding) 1/2
+	set MCS_RATE26(coding) 3/4
+	set MCS_RATE27(coding) 1/2
+	set MCS_RATE28(coding) 3/4
+	set MCS_RATE29(coding) 2/3
+	set MCS_RATE30(coding) 3/4
+	set MCS_RATE31(coding) 5/6
+
+	set MCS_RATEX(modulation) OFDM
+	set MCS_RATE0(modulation) BPSK
+	set MCS_RATE1(modulation) QPSK
+	set MCS_RATE2(modulation) QPSK
+	set MCS_RATE3(modulation) 16-QAM
+	set MCS_RATE4(modulation) 16-QAM
+	set MCS_RATE5(modulation) 64-QAM
+	set MCS_RATE6(modulation) 64-QAM
+	set MCS_RATE7(modulation) 64-QAM
+	set MCS_RATE8(modulation) BPSK
+	set MCS_RATE9(modulation) QPSK
+	set MCS_RATE10(modulation) QPSK
+	set MCS_RATE11(modulation) 16-QAM
+	set MCS_RATE12(modulation) 16-QAM
+	set MCS_RATE13(modulation) 64-QAM
+	set MCS_RATE14(modulation) 64-QAM
+	set MCS_RATE15(modulation) 64-QAM
+	set MCS_RATE16(modulation) BPSK
+	set MCS_RATE17(modulation) QPSK
+	set MCS_RATE18(modulation) QPSK
+	set MCS_RATE19(modulation) 16-QAM
+	set MCS_RATE20(modulation) 16-QAM
+	set MCS_RATE21(modulation) 64-QAM
+	set MCS_RATE22(modulation) 64-QAM
+	set MCS_RATE23(modulation) 64-QAM
+	set MCS_RATE24(modulation) BPSK
+	set MCS_RATE25(modulation) QPSK
+	set MCS_RATE26(modulation) QPSK
+	set MCS_RATE27(modulation) 16-QAM
+	set MCS_RATE28(modulation) 16-QAM
+	set MCS_RATE29(modulation) 64-QAM
+	set MCS_RATE30(modulation) 64-QAM
+	set MCS_RATE31(modulation) 64-QAM 
+
+		# Match MCS rate to Modulation and Coding 
+		if {$MCS == 0} {
+                    set MCS_C "$MCS_RATE0(coding)"
+                        set MCS_M "$MCS_RATE0(modulation)"
+		} elseif {$MCS == -1} {
+                    set MCS_C "$MCS_RATEX(coding)"
+                        set MCS_M "$MCS_RATEX(modulation)"
+                } elseif {$MCS == 1} {
+                    set MCS_C "$MCS_RATE1(coding)"
+                        set MCS_M "$MCS_RATE1(modulation)"
+		} elseif {$MCS == 2} {
+		    set MCS_C "$MCS_RATE2(coding)"
+			set MCS_M "$MCS_RATE2(modulation)"
+		} elseif {$MCS == 3} {
+		    set MCS_C "$MCS_RATE3(coding)"
+			set MCS_M "$MCS_RATE3(modulation)"
+		} elseif {$MCS == 4} {
+		    set MCS_C "$MCS_RATE4(coding)"
+			set MCS_M "$MCS_RATE4(modulation)"
+		} elseif {$MCS == 5} {
+		    set MCS_C "$MCS_RATE5(coding)"
+			set MCS_M "$MCS_RATE5(modulation)"
+		} elseif {$MCS == 6} {
+		    set MCS_C "$MCS_RATE6(coding)"
+			set MCS_M "$MCS_RATE6(modulation)"
+		} elseif {$MCS == 7} {
+		    set MCS_C "$MCS_RATE7(coding)"
+			set MCS_M "$MCS_RATE7(modulation)"
+		} elseif {$MCS == 8} {
+		    set MCS_C "$MCS_RATE8(coding)"
+			set MCS_M "$MCS_RATE8(modulation)"
+		} elseif {$MCS == 9} {
+		    set MCS_C "$MCS_RATE9(coding)"
+			set MCS_M "$MCS_RATE9(modulation)"
+		} elseif {$MCS == 10} {
+		    set MCS_C "$MCS_RATE10(coding)"
+			set MCS_M "$MCS_RATE10(modulation)"
+		} elseif {$MCS == 11} {
+		    set MCS_C "$MCS_RATE11(coding)"
+			set MCS_M "$MCS_RATE11(modulation)"
+		} elseif {$MCS == 12} {
+		    set MCS_C "$MCS_RATE12(coding)"
+			set MCS_M "$MCS_RATE12(modulation)"
+		} elseif {$MCS == 13} {
+		    set MCS_C "$MCS_RATE13(coding)"
+			set MCS_M "$MCS_RATE13(modulation)"
+		} elseif {$MCS == 14} {
+		    set MCS_C "$MCS_RATE14(coding)"
+			set MCS_M "$MCS_RATE14(modulation)"
+		} elseif {$MCS == 15} {
+		    set MCS_C "$MCS_RATE15(coding)"
+			set MCS_M "$MCS_RATE15(modulation)"
+		} elseif {$MCS == 16} {
+		    set MCS_C "$MCS_RATE16(coding)"
+			set MCS_M "$MCS_RATE16(modulation)"
+		} elseif {$MCS == 17} {
+		    set MCS_C "$MCS_RATE17(coding)"
+			set MCS_M "$MCS_RATE17(modulation)"
+		} elseif {$MCS == 18} {
+		    set MCS_C "$MCS_RATE18(coding)"
+			set MCS_M "$MCS_RATE18(modulation)"
+		} elseif {$MCS == 19} {
+		    set MCS_C "$MCS_RATE19(coding)"
+			set MCS_M "$MCS_RATE19(modulation)"
+                } elseif {$MCS == 20} {
+                    set MCS_C "$MCS_RATE20(coding)"
+                        set MCS_M "$MCS_RATE20(modulation)"
+		} elseif {$MCS == 21} {
+		    set MCS_C "$MCS_RATE21(coding)"
+			set MCS_M "$MCS_RATE21(modulation)"
+		} elseif {$MCS == 22} {
+		    set MCS_C "$MCS_RATE22(coding)"
+			set MCS_M "$MCS_RATE22(modulation)"
+		} elseif {$MCS == 23} {
+    		set MCS_C "$MCS_RATE23(coding)"
+			set MCS_M "$MCS_RATE23(modulation)"
+		} elseif {$MCS == 24} {
+		    set MCS_C "$MCS_RATE24(coding)"
+			set MCS_M "$MCS_RATE24(modulation)"
+		} elseif {$MCS == 25} {
+		    set MCS_C "$MCS_RATE25(coding)"
+			set MCS_M "$MCS_RATE25(modulation)"
+		} elseif {$MCS == 26} {
+		    set MCS_C "$MCS_RATE26(coding)"
+			set MCS_M "$MCS_RATE26(modulation)"
+		} elseif {$MCS == 27} {
+		    set MCS_C "$MCS_RATE27(coding)"
+			set MCS_M "$MCS_RATE27(modulation)"
+		} elseif {$MCS == 28} {
+		    set MCS_C "$MCS_RATE28(coding)"
+			set MCS_M "$MCS_RATE28(modulation)"
+		} elseif {$MCS == 29} {
+		    set MCS_C "$MCS_RATE29(coding)"
+			set MCS_M "$MCS_RATE29(modulation)"
+		} elseif {$MCS == 30} {
+		    set MCS_C "$MCS_RATE30(coding)"
+			set MCS_M "$MCS_RATE30(modulation)"
+		} elseif {$MCS == 31} {
+		    set MCS_C "$MCS_RATE31(coding)"
+			set MCS_M "$MCS_RATE31(modulation)"
+		} else {
+			# No else action required - MCS rate needed
+			#puts "No matching MCS rate\n"
+		    set MCS_C "<PENDING>"
+			set MCS_M "<PENDING>"
+		   }
+
+
+        if {[catch {puts "SSID: [bold_color 2 $SSID] BSSID: [underline_color 10 $BSSID] Time: [bold_color 271 [clock format $systemTime -format %H:%M:%S]] RSSI: $RSSI SNR: [bold_color 227 $SNR] NOISE: [bold_color 228 $NOISE] CH: $CHAN MCS: [bold_color 271 $MCS] [bold_color 271 $MCS_C] [bold_color 271 $MCS_M] DATARATE: $TXRATE"} fid]} {
+                puts stderr “ Puts Statement Failed ($fid) \n“
+                exit 1
+                }
+	global LAST_BSSID
+	set LAST_BSSID $BSSID
+	}
+
+
+
+
+# Generate DHCP Statistics - Using iterator from FOR loop 
+proc DHCP_STAT {CCOLOR} {
+		#puts [info level 0]
+		if {[catch {set DHCP_STAT [exec /usr/sbin/ipconfig getpacket en0]} fid]} {
+    		#puts stderr "Could not execute DHCP STAT Query\n$fid"
+		set DHCP_STAT "<PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING>" 
+    		#exit 1
+		}
+	set DHCP_STAT [split $DHCP_STAT] ;  
+	set DHCP_OP [lindex $DHCP_STAT 2] ; #/*  1 = BOOTREQUEST, 2 = BOOTREPLY */
+	set DHCP_HTYPE [lindex $DHCP_STAT 5] ; # /* HW address type */
+	set DHCP_FLAGS [lindex $DHCP_STAT 8] ; # PENDING 
+	set DHCP_HLEN [lindex $DHCP_STAT 11] ;  #/* HW address length */
+	set DHCP_HOPS [lindex $DHCP_STAT 14] ;  #/* Used only by gateways */
+	set DHCP_XID [lindex $DHCP_STAT 17] ; #/* Transaction ID */
+	set DHCP_TIMEELAPSE [lindex $DHCP_STAT 20] ; #/* Elapsed Time- BROKEN*/
+	set DHCP_CIADDR [lindex $DHCP_STAT 23] ; #/* Client IP Address - Only used in DHCP REBINDING, RENEWAL and BOUND */
+	set DHCP_YIADDR [lindex $DHCP_STAT 26] ; #/* Client IP Address - Sent in DHCP OFFER & ACK */
+	set DHCP_SIADDR [lindex $DHCP_STAT 29] ; #/* IP address of next server to use in bootstrap (DHCP SVR) */
+	set DHCP_GIADDR [lindex $DHCP_STAT 32] ; #/* Relay Agent IP Address */
+	set DHCP_CHADDR [lindex $DHCP_STAT 35] ; #/* Client HW Addr (adapter mac address) */
+	set DHCP_SNAME [lindex $DHCP_STAT 38] ; #/* Optional Server Host Name, null terminated string*/
+	set DHCP_FILE [lindex $DHCP_STAT 41] ; #/* Boot file name, null terminated string */
+	set DHCP_OPTIONS [lindex $DHCP_STAT 44] ; #/* Optional parameters field. */
+	set DHCP_MSG_TYPE [lindex $DHCP_STAT 47] ; #/* Optional parameters field.  — MORE WORK PENDING ON PROC MISSING VARIABLES*/ 
+	set UNCOLORED "YIADDR: $DHCP_YIADDR XID: $DHCP_XID OPTION: $DHCP_OP CIADDR: $DHCP_CIADDR SIDADDR: $DHCP_SIADDR GIADDR: $DHCP_GIADDR SNAME $DHCP_SNAME OPTIONS: $DHCP_OPTIONS HOPS: $DHCP_HOPS"
+	puts [color $CCOLOR $UNCOLORED] 
+	}
+
+#Create logo 
+set logo_a "|==========================================================================|"
+set logo_b "| Roaming Check Wifi                           "
+set logo_i "      ||        ||      "
+set logo_o "    |"
+set logo_c "|                                              "
+set logo_j "      ||        ||      "
+set logo_d "| Script: roaming                              "
+set logo_k "     ||||      ||||     "
+set logo_e "|                                              "
+set logo_l " ..:||||||:..:||||||:.. " 
+set logo_f "| Author: Josh Halley                          "
+set logo_m "------------------------"
+set logo_g "|                                              "
+set logo_n "C i s c o  S y s t e m s"
+set logo_h "|==========================================================================|"
+
+set logo_A [background_color 15 [bold_color 0 $logo_a]]
+set logo_B [background_color 15 [bold_color 0 $logo_b]]
+set logo_O [background_color 15 [bold_color 0 $logo_o]]
+set logo_C [background_color 15 [bold_color 0 $logo_c]]
+set logo_D [background_color 15 [bold_color 0 $logo_d]]
+set logo_E [background_color 15 [bold_color 0 $logo_e]]
+set logo_F [background_color 15 [bold_color 0 $logo_f]]
+set logo_G [background_color 15 [bold_color 0 $logo_g]]
+set logo_H [background_color 15 [bold_color 0 $logo_h]]
+set logo_I [background_color 28 [bold_color 15 $logo_i]]
+set logo_J [background_color 28 [bold_color 15 $logo_j]]
+set logo_K [background_color 28 [bold_color 15 $logo_k]]
+set logo_L [background_color 28 [bold_color 15 $logo_l]]
+set logo_M [background_color 28 [bold_color 15 $logo_m]]
+set logo_N [background_color 15 [bold_color 9 $logo_n]]
+set logo_H [background_color 15 [bold_color 0 $logo_h]]
+
+puts $logo_A
+puts $logo_B$logo_I$logo_O
+puts $logo_C$logo_J$logo_O
+puts $logo_D$logo_K$logo_O
+puts $logo_E$logo_L$logo_O
+puts $logo_F$logo_M$logo_O
+puts $logo_G$logo_N$logo_O
+puts $logo_H
+
+# SSID Counters - maintain history 
+set currentssid ""
+set lastssid ""
+set ssidlist ""
+
+# RSSI Counters - maintain history
+set currentrssi ""
+set lastrssi ""
+set rssilist ""
+
+# SNR Counters - maintain history
+set currentsnr ""
+set lastsnr ""
+set snrlist ""
+
+# NOISE Counters - maintain history
+set currentnoise ""
+set lastnoise ""
+set noiselist ""
+
+
+# main program routine 
+for { set i 32 } { $i <= 1000000 } { incr i } {
+	# Ensure that trap will not break whole program 
+	if {$depart == 0} {
+        } else {
+        break
+        }
+
+	# SSID Tracking 
+	set lastssid $currentssid
+	if {$lastssid == $currentssid} {
+	lappend ssidlist $lastssid
+	} else {
+	#lappend ssidlist $lastssid
+	}
+
+
+	# RSSI Tracking (array based) 
+	set lastrssi $currentrssi
+        if {$lastrssi == $currentrssi} {
+	lappend BSSID_RSSI($currentssid) $lastrssi
+        } else {
+	set BSSID_RSSI($currentssid) $currentrssi
+        }
+
+	# Time Tracking - <PENDING> 
+
+	WIFI_STAT
+	DHCP_STAT $i
+#	puts "Iteration $i"
+#	puts $lastssid
+#	puts $ssidlist
+	after 500
+	
+}
+
+
+set ssidlist [lreplace $ssidlist 0 0]
+#set rssilist [lreplace $rssilist 0 0]
+
+# Iterate both lists 
+#foreach OLD_SSIDS $ssidlist OLD_RSSI $rssilist {
+#puts "BSSID: [bold_color 15 $OLD_SSIDS] RSSI: [bold_color 15 $OLD_RSSI] "
+#}
+
+set header "
+====================================================================================================================================
+|											      					   |
+|	                        	WiFi Roaming - Historical Overview                                                         |
+|											          				   |
+------------------------------------------------------------------------------------------------------------------------------------
+| 	     |	               |      |	             RSSI 	      |	          |			                           |
+| Start-End  |   BSSID         |  CH  |------------------------------ | DHCP XID  |       					   | 
+|	     |	               |      | Min | Avg  | Max | 1st | Last |		  |		  			           |
+===================================================================================================================================="
+puts [bold_color 15 $header]
+
+#Remove Null Array Entries
+
+#if {[info exists BSSID_RSSI(0:0:0:0:0:0)]} {
+#unset $BSSID_RSSI(0:0:0:0:0:0)
+#}
+catch {unset BSSID_RSSI(0:0:0:0:0:0)}
+
+foreach key [array names BSSID_RSSI] {
+    if {$key >0} {
+    #puts "${key} $BSSID_RSSI($key)"
+    set RSSI_LIST [join $BSSID_RSSI($key) ","]
+    set RSSI_MAX [expr min($RSSI_LIST)]
+    set RSSI_MIN [expr max($RSSI_LIST)]
+    set average [expr ([join $BSSID_RSSI($key) +])/[llength $BSSID_RSSI($key)]] 
+    
+    #First Entry in List 
+    set FIRST_RSSI [lindex $BSSID_RSSI($key) 0]
+    #Last Entry in list 
+    set LAST_RSSI [lindex $BSSID_RSSI($key) end]
+    
+    set space 17 
+    set fillChar " "
+    set derivedStringLength [expr $space - [string length ${key}]]
+    for {set i 0} {$i < $derivedStringLength } {incr i +1} {
+      append {key} $fillChar
+    }
+    set space 5
+    set fillChar " "
+    set derivedStringLength [expr $space - [string length $average]]
+    for {set i 0} {$i < $derivedStringLength } {incr i +1} {
+       append average $fillChar
+    }
+    set space 5
+    set fillChar " "
+    set derivedStringLength [expr $space - [string length $RSSI_MIN]]
+    for {set i 0} {$i < $derivedStringLength } {incr i +1} {
+      append RSSI_MIN $fillChar
+    }
+    set space 5
+    set fillChar " "
+    set derivedStringLength [expr $space - [string length $RSSI_MAX]]
+    for {set i 0} {$i < $derivedStringLength } {incr i +1} {
+      append RSSI_MAX $fillChar
+    } 
+    set space 5
+    set fillChar " "
+    set derivedStringLength [expr $space - [string length $FIRST_RSSI]]
+    for {set i 0} {$i < $derivedStringLength } {incr i +1} {
+      append FIRST_RSSI $fillChar
+    }
+    set space 5
+    set fillChar " "
+    set derivedStringLength [expr $space - [string length $LAST_RSSI]]
+    for {set i 0} {$i < $derivedStringLength } {incr i +1} {
+      append LAST_RSSI $fillChar
+    }
+    puts "|             [underline_color 10 ${key}]         [bold_color 228 $RSSI_MIN] [bold_color 228 $average] [bold_color 228 $RSSI_MAX] [bold_color 228 $FIRST_RSSI] [bold_color 228 $LAST_RSSI]"
+    } else {
+    } 
+}
+
