@@ -4,7 +4,7 @@
 
 In wireless network deployments, it is important to understand the behavior of wireless clients based on the radio frequency deployment. In particular the roaming thresholds which the client device devices to roam at in order to ascertian whether time sensitive applications such as voice and video could be impacted, due to either a poor wireless deployment or sticky client behavior. 
 
-## Demonstration (Large File May take time to Load):
+## Demonstration:
 
 ![Demo](./roaming.gif)
 
