@@ -1,27 +1,28 @@
 #!/usr/bin/tclsh
+# ===========================================================================
+#
+#  OSX WiFI Roaming Tracker                           ||        ||
+#                                                     ||        ||
+#  Script: roaming.tcl                               ||||      ||||
+#                                               ..:||||||:..:||||||:..
+#  Author: Josh Halley                         ------------------------
+#                                              C i s c o  S y s t e m s
+#  Version: 0.1 Beta (March 2014)
+#
+# ===========================================================================
 package require Tclx
 
-# replace break handling from Cntrl-c with final report 
+# replace break handling from Cntrl-c with final report
 set depart 0
-signal trap SIGINT { puts "\nRoutine Exit Attempted Ctrl-C" ; set break 1 ; set depart 1} 
+signal trap SIGINT { puts "\nRoutine Exit Attempted Ctrl-C" ; set break 1 ; set depart 1}
 
-if {$argv < 0} {
-puts "Version: 1.0 Beta"
-puts "usage: roaming \[-W Wifi\] \[-D DHCP\]\n\n" 
-    	exit 1
-	} elseif {[regexp -all .*v $argv]} {
-	puts "Version 0.1"
-	exit 1
-	} else {
-}
-
-#Procedures for Color 
+#Procedures for Color
 proc color {foreground text} {
     return [exec tput setaf $foreground]$text[exec tput sgr0]
 }
 
 proc underline_color {foreground text} {
-    return [exec tput setaf $foreground][exec tput smul]$text[exec tput rmul][exec tput sgr0]; 
+    return [exec tput setaf $foreground][exec tput smul]$text[exec tput rmul][exec tput sgr0];
 }
 
 proc bold_color {foreground text} {
@@ -29,7 +30,7 @@ proc bold_color {foreground text} {
 }
 
 proc bunderline_color {foreground text} {
-    return [exec tput setaf $foreground][exec tput smul][exec tput bold]$text[exec tput rmul][exec tput sgr0]; 
+    return [exec tput setaf $foreground][exec tput smul][exec tput bold]$text[exec tput rmul][exec tput sgr0];
 }
 
 proc background_color {background text} {
@@ -38,7 +39,7 @@ proc background_color {background text} {
 
 proc  WIFI_STAT {} {
 	#puts [info level 0]
-        #Retrive RF Statistics 		
+        #Retrive RF Statistics
 	if {[catch {set RF_STAT [exec /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I]} fid]} {
     		puts stderr "Could not execute RF STAT Query\n$fid"
     		exit 1
@@ -85,7 +86,7 @@ proc  WIFI_STAT {} {
                 exit 1
                 }
 
-		# Calculate SNR 
+		# Calculate SNR
 		if {[catch {set SNR [expr $RSSI - $NOISE]} fid]} {
     		puts stderr “Could not calculate SNR - Variables Not Set ($fid) \n“
     		exit 1
@@ -234,7 +235,7 @@ proc  WIFI_STAT {} {
 
 	set systemTime [clock seconds]
 
-	#MCS DEFINITIONS 
+	#MCS DEFINITIONS
 	set MCS_RATEX(coding) LEGACY
 	set MCS_RATE0(coding) 1/2
 	set MCS_RATE1(coding) 1/2
@@ -301,9 +302,9 @@ proc  WIFI_STAT {} {
 	set MCS_RATE28(modulation) 16-QAM
 	set MCS_RATE29(modulation) 64-QAM
 	set MCS_RATE30(modulation) 64-QAM
-	set MCS_RATE31(modulation) 64-QAM 
+	set MCS_RATE31(modulation) 64-QAM
 
-		# Match MCS rate to Modulation and Coding 
+		# Match MCS rate to Modulation and Coding
 		if {$MCS == 0} {
                     set MCS_C "$MCS_RATE0(coding)"
                         set MCS_M "$MCS_RATE0(modulation)"
@@ -422,18 +423,18 @@ proc  WIFI_STAT {} {
 
 
 
-# Generate DHCP Statistics - Using iterator from FOR loop 
+# Generate DHCP Statistics - Using iterator from FOR loop
 proc DHCP_STAT {CCOLOR} {
 		#puts [info level 0]
 		if {[catch {set DHCP_STAT [exec /usr/sbin/ipconfig getpacket en0]} fid]} {
     		#puts stderr "Could not execute DHCP STAT Query\n$fid"
-		set DHCP_STAT "<PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING>" 
+		set DHCP_STAT "<PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING> <PENDING>"
     		#exit 1
 		}
-	set DHCP_STAT [split $DHCP_STAT] ;  
+	set DHCP_STAT [split $DHCP_STAT] ;
 	set DHCP_OP [lindex $DHCP_STAT 2] ; #/*  1 = BOOTREQUEST, 2 = BOOTREPLY */
 	set DHCP_HTYPE [lindex $DHCP_STAT 5] ; # /* HW address type */
-	set DHCP_FLAGS [lindex $DHCP_STAT 8] ; # PENDING 
+	set DHCP_FLAGS [lindex $DHCP_STAT 8] ; # PENDING
 	set DHCP_HLEN [lindex $DHCP_STAT 11] ;  #/* HW address length */
 	set DHCP_HOPS [lindex $DHCP_STAT 14] ;  #/* Used only by gateways */
 	set DHCP_XID [lindex $DHCP_STAT 17] ; #/* Transaction ID */
@@ -446,12 +447,12 @@ proc DHCP_STAT {CCOLOR} {
 	set DHCP_SNAME [lindex $DHCP_STAT 38] ; #/* Optional Server Host Name, null terminated string*/
 	set DHCP_FILE [lindex $DHCP_STAT 41] ; #/* Boot file name, null terminated string */
 	set DHCP_OPTIONS [lindex $DHCP_STAT 44] ; #/* Optional parameters field. */
-	set DHCP_MSG_TYPE [lindex $DHCP_STAT 47] ; #/* Optional parameters field.  — MORE WORK PENDING ON PROC MISSING VARIABLES*/ 
+	set DHCP_MSG_TYPE [lindex $DHCP_STAT 47] ; #/* Optional parameters field.  — MORE WORK PENDING ON PROC MISSING VARIABLES*/
 	set UNCOLORED "YIADDR: $DHCP_YIADDR XID: $DHCP_XID OPTION: $DHCP_OP CIADDR: $DHCP_CIADDR SIDADDR: $DHCP_SIADDR GIADDR: $DHCP_GIADDR SNAME $DHCP_SNAME OPTIONS: $DHCP_OPTIONS HOPS: $DHCP_HOPS"
-	puts [color $CCOLOR $UNCOLORED] 
+	puts [color $CCOLOR $UNCOLORED]
 	}
 
-#Create logo 
+#Create logo
 set logo_a "|==========================================================================|"
 set logo_b "| Roaming Check Wifi                           "
 set logo_i "      ||        ||      "
@@ -461,7 +462,7 @@ set logo_j "      ||        ||      "
 set logo_d "| Script: roaming                              "
 set logo_k "     ||||      ||||     "
 set logo_e "|                                              "
-set logo_l " ..:||||||:..:||||||:.. " 
+set logo_l " ..:||||||:..:||||||:.. "
 set logo_f "| Author: Josh Halley                          "
 set logo_m "------------------------"
 set logo_g "|                                              "
@@ -494,7 +495,7 @@ puts $logo_F$logo_M$logo_O
 puts $logo_G$logo_N$logo_O
 puts $logo_H
 
-# SSID Counters - maintain history 
+# SSID Counters - maintain history
 set currentssid ""
 set lastssid ""
 set ssidlist ""
@@ -515,15 +516,15 @@ set lastnoise ""
 set noiselist ""
 
 
-# main program routine 
+# main program routine
 for { set i 32 } { $i <= 1000000 } { incr i } {
-	# Ensure that trap will not break whole program 
+	# Ensure that trap will not break whole program
 	if {$depart == 0} {
         } else {
         break
         }
 
-	# SSID Tracking 
+	# SSID Tracking
 	set lastssid $currentssid
 	if {$lastssid == $currentssid} {
 	lappend ssidlist $lastssid
@@ -532,7 +533,7 @@ for { set i 32 } { $i <= 1000000 } { incr i } {
 	}
 
 
-	# RSSI Tracking (array based) 
+	# RSSI Tracking (array based)
 	set lastrssi $currentrssi
         if {$lastrssi == $currentrssi} {
 	lappend BSSID_RSSI($currentssid) $lastrssi
@@ -540,7 +541,7 @@ for { set i 32 } { $i <= 1000000 } { incr i } {
 	set BSSID_RSSI($currentssid) $currentrssi
         }
 
-	# Time Tracking - <PENDING> 
+	# Time Tracking - <PENDING>
 
 	WIFI_STAT
 	DHCP_STAT $i
@@ -548,26 +549,26 @@ for { set i 32 } { $i <= 1000000 } { incr i } {
 #	puts $lastssid
 #	puts $ssidlist
 	after 500
-	
+
 }
 
 
 set ssidlist [lreplace $ssidlist 0 0]
 #set rssilist [lreplace $rssilist 0 0]
 
-# Iterate both lists 
+# Iterate both lists
 #foreach OLD_SSIDS $ssidlist OLD_RSSI $rssilist {
 #puts "BSSID: [bold_color 15 $OLD_SSIDS] RSSI: [bold_color 15 $OLD_RSSI] "
 #}
 
 set header "
 ====================================================================================================================================
-|											      					   |
+|										      					   |
 |	                        	WiFi Roaming - Historical Overview                                                         |
-|											          				   |
+|										          				   |
 ------------------------------------------------------------------------------------------------------------------------------------
 | 	     |	               |      |	             RSSI 	      |	          |			                           |
-| Start-End  |   BSSID         |  CH  |------------------------------ | DHCP XID  |       					   | 
+| Start-End  |   BSSID         |  CH  |------------------------------ | DHCP XID  |       					   |
 |	     |	               |      | Min | Avg  | Max | 1st | Last |		  |		  			           |
 ===================================================================================================================================="
 puts [bold_color 15 $header]
@@ -585,14 +586,14 @@ foreach key [array names BSSID_RSSI] {
     set RSSI_LIST [join $BSSID_RSSI($key) ","]
     set RSSI_MAX [expr min($RSSI_LIST)]
     set RSSI_MIN [expr max($RSSI_LIST)]
-    set average [expr ([join $BSSID_RSSI($key) +])/[llength $BSSID_RSSI($key)]] 
-    
-    #First Entry in List 
+    set average [expr ([join $BSSID_RSSI($key) +])/[llength $BSSID_RSSI($key)]]
+
+    #First Entry in List
     set FIRST_RSSI [lindex $BSSID_RSSI($key) 0]
-    #Last Entry in list 
+    #Last Entry in list
     set LAST_RSSI [lindex $BSSID_RSSI($key) end]
-    
-    set space 17 
+
+    set space 17
     set fillChar " "
     set derivedStringLength [expr $space - [string length ${key}]]
     for {set i 0} {$i < $derivedStringLength } {incr i +1} {
@@ -615,7 +616,7 @@ foreach key [array names BSSID_RSSI] {
     set derivedStringLength [expr $space - [string length $RSSI_MAX]]
     for {set i 0} {$i < $derivedStringLength } {incr i +1} {
       append RSSI_MAX $fillChar
-    } 
+    }
     set space 5
     set fillChar " "
     set derivedStringLength [expr $space - [string length $FIRST_RSSI]]
@@ -630,6 +631,6 @@ foreach key [array names BSSID_RSSI] {
     }
     puts "|             [underline_color 10 ${key}]         [bold_color 228 $RSSI_MIN] [bold_color 228 $average] [bold_color 228 $RSSI_MAX] [bold_color 228 $FIRST_RSSI] [bold_color 228 $LAST_RSSI]"
     } else {
-    } 
+    }
 }
 
