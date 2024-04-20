@@ -7,7 +7,7 @@
 #                                               ..:||||||:..:||||||:..
 #  Author: Josh Halley                         ------------------------
 #                                              C i s c o  S y s t e m s
-#  Version: 0.1 Beta (March 2014)
+#  Version: 0.2 Beta (April 2024)
 #
 # ===========================================================================
 package require Tclx
@@ -40,7 +40,7 @@ proc background_color {background text} {
 proc  WIFI_STAT {} {
 	#puts [info level 0]
         #Retrive RF Statistics
-	if {[catch {set RF_STAT [exec /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I]} fid]} {
+	if {[catch {set RF_STAT [exec sudo /usr/bin/wdutil info]} fid]} {
     		puts stderr "Could not execute RF STAT Query\n$fid"
     		exit 1
 		}
@@ -49,39 +49,39 @@ proc  WIFI_STAT {} {
                 puts stderr “ Could not set RF_STAT ($fid) \n“
                 exit 1
                 }
-	if {[catch {set RSSI [lindex $RF_STAT 6]} fid]} {
+	if {[catch {set RSSI [lindex $RF_STAT 275]} fid]} {
                 puts stderr “ Could not set RSSI ($fid) \n“
                 exit 1
                 }
-	if {[catch {set NOISE [lindex $RF_STAT 19]} fid]} {
+	if {[catch {set NOISE [lindex $RF_STAT 298]} fid]} {
                 puts stderr “ Could not set NOISE ($fid) \n“
                 exit 1
                 }
-	if {[catch {set TXRATE [lindex $RF_STAT 56]} fid]} {
+	if {[catch {set TXRATE [lindex $RF_STAT 320]} fid]} {
                 puts stderr “ Could not set TXRATE ($fid) \n“
                 exit 1
                 }
-	if {[catch {set AUTH [lindex $RF_STAT 75]} fid]} {
+	if {[catch {set AUTH [lindex $RF_STAT 340]} fid]} {
                 puts stderr “ Could not set AUTH ($fid) \n“
                 exit 1
                 }
-	if {[catch {set LINKA [lindex $RF_STAT 84]} fid]} {
+	if {[catch {set LINKA [lindex $RF_STAT 360]} fid]} {
                 puts stderr “ Could not set LINKA ($fid) \n“
                 exit 1
                 }
-	if {[catch {set BSSID [lindex $RF_STAT 96]} fid]} {
+	if {[catch {set BSSID [lindex $RF_STAT 252]} fid]} {
                 puts stderr “ Could not set BSSID ($fid) \n“
                 exit 1
                 }
-	if {[catch {set SSID [lindex $RF_STAT 109]} fid]} {
+	if {[catch {set SSID [lindex $RF_STAT 230]} fid]} {
                 puts stderr “ Could not set SSID ($fid) \n“
                 exit 1
                 }
-	if {[catch {set MCS [lindex $RF_STAT 123]} fid]} {
+	if {[catch {set MCS [lindex $RF_STAT 379]} fid]} {
                 puts stderr “ Could not set MCS ($fid) \n“
                 exit 1
                 }
-	if {[catch {set CHAN [lindex $RF_STAT 133]} fid]} {
+	if {[catch {set CHAN [lindex $RF_STAT 437]} fid]} {
                 puts stderr “ Could not set CHAN ($fid) \n“
                 exit 1
                 }
