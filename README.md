@@ -10,7 +10,7 @@ In wireless network deployments, it is important to understand the behavior of w
 
 ### Requirements 
 
-* OSX (Tested using Mojave) 
+* OSX (Tested using Sonoma) 
 
 * For best performance (truecolour) iTerm2 terminal client is recommended
 
@@ -18,11 +18,14 @@ In wireless network deployments, it is important to understand the behavior of w
 
 This script can only operate in one mode, Control-C should be used to end script.
 
+Given the rights requirements of the new wdutil utility which is used.
+
 
 **Tools & Frameworks:**
 
 - Tcl (8.5)
 - Tclx (module)
+- wdutil (natively installed in OSX)
 
 
 ## Authors & Maintainers
